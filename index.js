@@ -1,8 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import logo from  './img/logo.png'
 import { IMG_CDN_URL } from './components/config'
-import { RestaurantList } from './components/RestaurantList'
 
 const Title = () => {
     return (
@@ -43,14 +42,58 @@ const RestaurantCard = ({name, cuisines, cloudinaryImageId, totalRatingsString})
 }
 
 const Body = () => {
+    const [fillteredRestaurants, setFillteredRestaurants] = useState([])
+    const [allRestaurants, setAllRestaurants] = useState([])
+    const [searchText, setSearchText] = useState('')
+
+    useEffect(() => {
+        getRestaurants()
+    }, [])
+
+    async function getRestaurants(text) {
+        const data = await fetch("https://www.swiggy.com/dapi/restaurants/list/v5?lat=18.5204303&lng=73.8567437&page_type=DESKTOP_WEB_LISTING")
+        const json = await data.json()
+        setAllRestaurants(json?.data?.cards[2]?.data?.data?.cards)
+        setFillteredRestaurants(json?.data?.cards[2]?.data?.data?.cards)
+    }
+
+    function filterData(text, list){
+        const data = list.filter(restaurant=>{
+            return restaurant?.data?.name.includes(text)
+        })
+        return data
+    }
     return (
-        <div className='restaurant-list'>
+        <>
+            <div className='search-container'>
+                <input
+                    type='text'
+                    className='search-input'
+                    placeholder='Search'
+                    value={searchText}
+                    onChange={(e)=>{
+                        setSearchText(e.target.value)
+                    }}
+                />
+                <button
+                    type='submit'
+                    onClick={() => {
+                            const data = filterData(searchText, allRestaurants)
+                            setFillteredRestaurants(data)
+                        }
+                    }
+                >
+                    Search
+                </button>
+            </div>
+            <div className='restaurant-list'>
             {
-                RestaurantList.map(restaurant =>{
-                    return <RestaurantCard {...restaurant.data} />
+                fillteredRestaurants.map(restaurant =>{
+                    return <RestaurantCard {...restaurant.data} key = {restaurant.data.id} />
                 })
             }
         </div>
+        </>
     )
 }
 const Footer = () => {
